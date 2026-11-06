@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preventivi Edili</title>
+<!--
+  Preventivi Edili — app a pagina unica, senza server e senza librerie.
+  Come è fatta (dall'alto in basso in questo file):
+    1. STILE      (CSS): aspetto della pagina e, in fondo, regole per la STAMPA.
+    2. PAGINA     (HTML): barra in alto, colonna del modulo a sinistra, anteprima del foglio A4 a destra.
+    3. PROGRAMMA  (JavaScript): stato -> salvataggio -> modulo -> anteprima.
+  I calcoli (totali, IVA, sconti) NON sono qui: stanno in calcoli.js, che ha i test automatici.
+-->
+<style>
+/* ============================ 1. STILE ============================ */
+:root{
+  --bg:#eef0f3; --superficie:#fff; --linea:#dde1e7; --linea2:#c5cbd4;
+  --testo:#1c222b; --tenue:#667080; --primario:#2b4a6f; --primario-ink:#fff;
+  --errore:#b42318; --errore-bg:#fdecea; --avviso:#8a5a0b; --avviso-bg:#fff5e0; --ok:#2f7d4f;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--testo);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+[hidden]{display:none!important}
+
+/* Barra in alto */
+.barra{height:56px;overflow-x:auto;background:#1f2630;color:#fff;display:flex;align-items:center;gap:8px;padding:0 14px}
+.barra .titolo{font-weight:700;font-size:18px;margin-right:auto;white-space:nowrap}
+.barra .btn{flex:none}
+.barra .salvato{font-size:13px;opacity:.7;white-space:nowrap}
+.btn{border:1px solid var(--linea2);background:var(--superficie);color:var(--testo);padding:8px 14px;min-height:40px;border-radius:9px;cursor:pointer;font-weight:600;white-space:nowrap}
+.btn:hover{background:#f5f6f8}
+.btn.primario{background:var(--primario);border-color:var(--primario);color:var(--primario-ink)}
+.btn.primario:hover{filter:brightness(1.12)}
+.btn.piccolo{min-height:32px;padding:4px 10px;font-size:14px}
+.btn.pericolo{color:var(--errore);border-color:#e6b4ae}
+.barra .btn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff}
+.barra .btn:hover{background:rgba(255,255,255,.2)}
+.barra .btn.primario{background:var(--primario-ink);color:var(--primario);border-color:#fff}
+
+/* Due colonne: modulo | anteprima */
+.layout{display:grid;grid-template-columns:minmax(380px,480px) 1fr;height:calc(100% - 56px)}
+.col-form{overflow:auto;padding:16px;border-right:1px solid var(--linea);background:var(--bg)}
+.col-anteprima{overflow:auto;padding:20px;background:#d9dde3}
+.vista-tab{display:none}
+
+/* Modulo */
+.avviso{padding:10px 12px;border-radius:var(--r);margin-bottom:12px;font-size:14.5px;background:var(--avviso-bg);color:var(--avviso);border:1px solid #f1d9a6}
+.avviso.errore{background:var(--errore-bg);color:var(--errore);border-color:#e6b4ae}
+.avviso .btn{margin-top:6px}
+.sezione{background:var(--superficie);border:1px solid var(--linea);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.sezione > h2,.sezione > summary{margin:0 0 10px;font-size:16px;font-weight:700}
+.sezione > summary{cursor:pointer;margin:0}
+.sezione[open] > summary{margin-bottom:10px}
+.griglia{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.griglia .intera{grid-column:1/-1}
+label.campo{display:block;font-size:13.5px;color:var(--tenue)}
+label.campo > span{display:block;margin-bottom:3px}
+input[type=text],input[type=email],input[type=tel],input[type=date],input[type=number],select,textarea{
+  width:100%;border:1px solid var(--linea2);border-radius:8px;padding:8px 10px;min-height:40px;background:#fff;color:var(--testo)}
+textarea{resize:vertical;min-height:60px}
+input:focus,select:focus,textarea:focus,.btn:focus-visible{outline:2px solid var(--primario);outline-offset:1px}
+.errore-campo{border-color:var(--errore)!important;background:var(--errore-bg)}
+.suggerimento{font-size:13px;color:var(--tenue);margin:6px 0 0}
+.logo-riga{display:flex;gap:10px;align-items:center}
+.logo-riga img{max-height:44px;max-width:120px;border:1px solid var(--linea);border-radius:6px;padding:2px;background:#fff}
+
+/* Righe dei lavori */
+.riga{border:1px solid var(--linea);border-radius:9px;padding:10px;margin-bottom:10px;background:#fafbfc}
+.riga-testa{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.riga-testa .num{font-weight:700;color:var(--tenue);margin-right:auto}
+.riga-campi{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+.riga-campi .importo{align-self:end;text-align:right;font-weight:700;padding-bottom:8px;font-variant-numeric:tabular-nums}
+.riepilogo{margin-top:6px;font-variant-numeric:tabular-nums}
+.riepilogo div{display:flex;justify-content:space-between;padding:3px 0;font-size:15px}
+.riepilogo .tot{font-weight:700;font-size:17px;border-top:1px solid var(--linea);margin-top:4px;padding-top:8px}
+
+/* Dialoghi */
+dialog{border:0;border-radius:14px;padding:0;max-width:min(640px,94vw);width:100%;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(20,25,33,.55)}
+.dlg{padding:20px}
+.dlg h2{margin:0 0 10px;font-size:19px}
+.dlg-azioni{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
+.elenco-p{list-style:none;margin:0;padding:0;max-height:55vh;overflow:auto}
+.elenco-p li{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--linea);border-radius:9px;padding:10px;margin-bottom:8px;flex-wrap:wrap}
+.elenco-p .attuale{border-color:var(--primario);background:#f2f6fb}
+.elenco-p .info{min-width:0}
+.elenco-p .info b{display:block}
+.elenco-p .info span{color:var(--tenue);font-size:14px}
+.passo{display:flex;gap:12px;align-items:flex-start;margin:12px 0}
+.passo .n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--primario);color:#fff;display:grid;place-items:center;font-weight:700}
+
+/* ---------- Il foglio A4 (anteprima e stampa) ---------- */
+#cartaBox{margin:0 auto}
+#carta{transform-origin:top left}
+.foglio{--acc:#2b4a6f;width:210mm;min-height:297mm;background:#fff;color:#1c222b;padding:14mm;box-shadow:0 2px 14px rgba(0,0,0,.25);
+  font-size:10pt;line-height:1.4}
+.foglio .testata{display:flex;justify-content:space-between;gap:16px;border-bottom:3px solid var(--acc);padding-bottom:10px;margin-bottom:14px}
+.foglio .ditta{display:flex;gap:12px;align-items:flex-start}
+.foglio .ditta img{max-height:18mm;max-width:40mm;object-fit:contain}
+.foglio .ditta-nome{font-size:15pt;font-weight:700;color:var(--acc)}
+.foglio .piccolo{font-size:8.5pt;color:#4b5563}
+.foglio .doc-tipo{text-align:right}
+.foglio .doc-tipo .et{font-size:18pt;font-weight:800;letter-spacing:.06em;color:var(--acc)}
+.foglio .doc-tipo div{font-size:9pt}
+.foglio .due{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px}
+.foglio .blocco .et{font-size:8pt;text-transform:uppercase;letter-spacing:.08em;color:var(--acc);font-weight:700;margin-bottom:2px}
+.foglio h3.oggetto{font-size:12pt;margin:6px 0 8px}
+.foglio table{width:100%;border-collapse:collapse;margin-bottom:10px}
+.foglio thead{display:table-header-group}
+.foglio th{background:var(--acc);color:#fff;font-size:8pt;text-transform:uppercase;letter-spacing:.05em;padding:6px;text-align:left;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.foglio td{padding:6px;border-bottom:1px solid #e3e6eb;vertical-align:top}
+.foglio tr{break-inside:avoid}
+.foglio .d{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.foglio .c{text-align:center;white-space:nowrap}
+.foglio .tot-box{margin-left:auto;width:78mm;break-inside:avoid;font-variant-numeric:tabular-nums}
+.foglio .tot-box div{display:flex;justify-content:space-between;padding:2px 0}
+.foglio .tot-box .grande{font-size:12pt;font-weight:800;color:var(--acc);border-top:2px solid var(--acc);margin-top:4px;padding-top:5px}
+.foglio .testo-libero{margin-top:12px;break-inside:avoid}
+.foglio .firme{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:18px;break-inside:avoid}
+.foglio .firma{border-top:1px solid #8a93a0;padding-top:4px;height:22mm;font-size:8.5pt;color:#4b5563}
+.foglio .ph{color:#aab1bc}
+
+/* ---------- Schermi stretti: una colonna con due schede ---------- */
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .vista-tab{display:flex;gap:6px}
+  body[data-vista="modifica"] .col-anteprima{display:none}
+  body[data-vista="anteprima"] .col-form{display:none}
+  .barra .nascondi-stretto{display:none}
+  .griglia{grid-template-columns:1fr}
+}
+
+/* ---------- STAMPA: solo il foglio, senza modulo e pulsanti ---------- */
+@page{size:A4;margin:14mm}
+@media print{
+  html,body{height:auto;background:#fff}
+  .barra,.col-form,dialog{display:none!important}
+  .layout{display:block;height:auto}
+  .col-anteprima{display:block!important;overflow:visible;padding:0;background:#fff}
+  #cartaBox{width:auto!important;height:auto!important}
+  #carta{transform:none!important}
+  .foglio{width:auto;min-height:0;padding:0;box-shadow:none}
+  .foglio .ph{display:none}
+}
+</style>
+</head>
+<body data-vista="modifica">
+
+<!-- ============================ 2. PAGINA ============================ -->
+<header class="barra">
+  <span class="titolo">Preventivi Edili</span>
+  <span class="salvato nascondi-stretto" id="statoSalvataggio" aria-live="polite"></span>
+  <span class="vista-tab">
+    <button class="btn" id="tabModifica" type="button">Modifica</button>
+    <button class="btn" id="tabAnteprima" type="button">Anteprima</button>
+  </span>
+  <button class="btn" id="btnNuovo" type="button">Nuovo preventivo</button>
+  <button class="btn" id="btnElenco" type="button">Preventivi salvati</button>
+  <button class="btn" id="btnCopie" type="button">Copia dei dati</button>
+  <button class="btn primario" id="btnStampa" type="button">Stampa / Salva PDF</button>
+</header>
+
+<div class="layout">
+  <!-- Colonna sinistra: il modulo -->
+  <div class="col-form" id="colForm">
+    <div class="avviso errore" id="avvisoArchivio" hidden></div>
+    <div class="avviso" id="avvisoCopia" hidden>
+      <span id="avvisoCopiaTesto"></span><br>
+      <button class="btn piccolo" id="btnCopiaDaAvviso" type="button">Scarica la copia ora</button>
+    </div>
+
+    <details class="sezione" id="sezDitta">
+      <summary>La mia ditta <span class="suggerimento" style="display:inline">(si scrive una volta sola)</span></summary>
+      <div class="griglia">
+        <label class="campo intera"><span>Nome della ditta</span><input type="text" data-k="i.ditta.nome" autocomplete="organization"></label>
+        <label class="campo"><span>Partita IVA</span><input type="text" data-k="i.ditta.piva" inputmode="numeric"></label>
+        <label class="campo"><span>Telefono</span><input type="tel" data-k="i.ditta.telefono"></label>
+        <label class="campo intera"><span>Indirizzo</span><input type="text" data-k="i.ditta.indirizzo" autocomplete="street-address"></label>
+        <label class="campo intera"><span>Email</span><input type="email" data-k="i.ditta.email"></label>
+        <label class="campo intera"><span>IBAN (facoltativo, compare in fondo al preventivo)</span><input type="text" data-k="i.ditta.iban"></label>
+        <div class="intera">
+          <span class="suggerimento" style="margin:0 0 4px;display:block">Logo (facoltativo)</span>
+          <div class="logo-riga">
+            <img id="logoAnteprima" alt="Logo" hidden>
+            <input type="file" id="fileLogo" accept="image/png,image/jpeg,image/webp">
+            <button class="btn piccolo" id="btnTogliLogo" type="button" hidden>Togli logo</button>
+          </div>
+        </div>
+        <label class="campo"><span>Colore del preventivo</span><input type="color" data-k="i.colore" style="width:100%;height:40px;padding:2px"></label>
+        <label class="campo"><span>Validità predefinita (giorni)</span><input type="number" min="0" max="365" data-k="i.validitaGiorni"></label>
+        <label class="campo intera"><span>Condizioni predefinite (si copiano in ogni nuovo preventivo)</span><textarea rows="5" data-k="i.condizioni"></textarea></label>
+      </div>
+    </details>
+
+    <section class="sezione">
+      <h2>Cliente</h2>
+      <div class="griglia">
+        <label class="campo intera"><span>Nome o azienda</span><input type="text" data-k="p.cliente.nome"></label>
+        <label class="campo intera"><span>Indirizzo del cliente</span><input type="text" data-k="p.cliente.indirizzo"></label>
+        <label class="campo"><span>Referente</span><input type="text" data-k="p.cliente.referente"></label>
+        <label class="campo"><span>Telefono o email</span><input type="text" data-k="p.cliente.contatto"></label>
+        <label class="campo intera"><span>Indirizzo del cantiere (se diverso)</span><input type="text" data-k="p.cliente.cantiere"></label>
+      </div>
+    </section>
+
+    <section class="sezione">
+      <h2>Preventivo</h2>
+      <div class="griglia">
+        <label class="campo"><span>Numero</span><input type="text" data-k="p.numero"></label>
+        <label class="campo"><span>Data</span><input type="date" data-k="p.data"></label>
+        <label class="campo"><span>Validità (giorni)</span><input type="number" min="0" max="365" data-k="p.validitaGiorni"></label>
+        <label class="campo intera"><span>Oggetto (di cosa si tratta)</span><input type="text" data-k="p.oggetto" placeholder="Es. Rifacimento bagno"></label>
+      </div>
+    </section>
+
+    <section class="sezione">
+      <h2>Lavori e prezzi</h2>
+      <div id="elencoRighe"></div>
+      <button class="btn" id="btnAggiungiRiga" type="button">+ Aggiungi un lavoro</button>
+      <p class="suggerimento">Scrivi i numeri come al solito: 1.200 oppure 1200,50. Per un lavoro a corpo metti quantità 1.</p>
+    </section>
+
+    <section class="sezione">
+      <h2>Sconto, acconto e totali</h2>
+      <div class="griglia">
+        <label class="campo"><span>Sconto</span>
+          <select data-k="p.sconto.tipo"><option value="percentuale">in percentuale (%)</option><option value="euro">in euro</option></select></label>
+        <label class="campo"><span>Valore dello sconto</span><input type="text" inputmode="decimal" data-k="p.sconto.valore" id="inSconto"></label>
+        <label class="campo intera"><span>Acconto richiesto (euro)</span><input type="text" inputmode="decimal" data-k="p.acconto" id="inAcconto"></label>
+      </div>
+      <div class="riepilogo" id="riepilogoForm"></div>
+    </section>
+
+    <section class="sezione">
+      <h2>Condizioni e note</h2>
+      <label class="campo"><span>Condizioni (pagamento, tempi, ...)</span><textarea rows="5" data-k="p.condizioni"></textarea></label>
+      <label class="campo" style="margin-top:10px"><span>Note per il cliente (facoltative)</span><textarea rows="3" data-k="p.note"></textarea></label>
+    </section>
+  </div>
+
+  <!-- Colonna destra: il foglio A4 -->
+  <div class="col-anteprima" id="colAnteprima">
+    <div id="cartaBox"><div id="carta"><div class="foglio" id="foglio"></div></div></div>
+  </div>
+</div>
+
+<!-- Dialogo: preventivi salvati -->
+<dialog id="dlgElenco"><div class="dlg">
+  <h2>Preventivi salvati</h2>
+  <ul class="elenco-p" id="listaPreventivi"></ul>
+  <div class="dlg-azioni"><button class="btn" data-chiudi type="button">Chiudi</button></div>
+</div></dialog>
+
+<!-- Dialogo: copia dei dati -->
+<dialog id="dlgCopie"><div class="dlg">
+  <h2>Copia dei dati</h2>
+  <p>I preventivi sono salvati <b>dentro questo browser</b>, su questo computer. Se si cancellano i dati di navigazione, o si usa un altro browser, l'app sembra vuota. Per questo conviene scaricare ogni tanto una copia.</p>
+  <div class="passo"><span class="n">1</span><div><b>Scarica una copia</b><br><span class="suggerimento">Crea un file che puoi tenere su una chiavetta, su Drive o mandarti per email.</span><br>
+    <button class="btn primario" id="btnScarica" type="button" style="margin-top:6px">Scarica una copia</button></div></div>
+  <div class="passo"><span class="n">2</span><div><b>Recupera da una copia</b><br><span class="suggerimento">Sostituisce i dati che vedi adesso con quelli del file.</span><br>
+    <input type="file" id="fileRecupero" accept="application/json,.json" style="margin-top:6px"></div></div>
+  <div class="passo" id="passoEsempio"><span class="n">3</span><div><b>Provalo con un esempio</b><br><span class="suggerimento">Riempie il preventivo attuale con dati inventati, per vedere come viene. Disponibile solo se il preventivo è ancora vuoto.</span><br>
+    <button class="btn" id="btnEsempio" type="button" style="margin-top:6px">Compila con un esempio</button></div></div>
+  <div class="dlg-azioni"><button class="btn" data-chiudi type="button">Chiudi</button></div>
+</div></dialog>
+
+<!-- Dialogo: conferma -->
+<dialog id="dlgConferma"><div class="dlg">
+  <h2 id="confTitolo"></h2>
+  <p id="confTesto"></p>
+  <div class="dlg-azioni">
+    <button class="btn" id="confNo" type="button">Annulla</button>
+    <button class="btn primario" id="confSi" type="button">Conferma</button>
+  </div>
+</div></dialog>
+
+<script src="calcoli.js"></script>
+<script>
+/* ============================ 3. PROGRAMMA ============================ */
+(function () {
+  'use strict';
+  var C = window.Calcoli;
+
+  // ---- Piccoli aiuti ----------------------------------------------------------------------
+  function $(sel, radice) { return (radice || document).querySelector(sel); }
+  function $$(sel, radice) { return Array.prototype.slice.call((radice || document).querySelectorAll(sel)); }
+  /** Rende sicuro un testo da inserire nell'HTML (evita che un nome tipo "<b>" rompa la pagina). */
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function multiriga(s) { return esc(s).replace(/\n/g, '<br>'); }
+  function nuovoId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function testo(v, def) { return typeof v === 'string' ? v : (def || ''); }
+
+  var CHIAVE = 'preventivi-edili-v1';            // nome sotto cui il browser conserva i dati
+  var UNITA = ['a corpo', 'mq', 'ml', 'mc', 'ore', 'giorni', 'pz', 'kg'];
+  var ALIQUOTE = ['22', '10', '4', 'esente'];
+  var CONDIZIONI_BASE = 'Pagamento: acconto all\'accettazione del preventivo, saldo a fine lavori.\n' +
+    'Il preventivo comprende solo i lavori elencati. Eventuali lavori aggiuntivi saranno concordati e quotati a parte.';
+
+  // ---- Stato dell'app ---------------------------------------------------------------------
+  // stato = { versione, impostazioni, preventivi: [...], corrente: id, ultimaCopia: numero|null }
+  var stato;
+  var archivioOk = true;
+
+  function impostazioniBase() {
+    return {
+      ditta: { nome: '', piva: '', indirizzo: '', telefono: '', email: '', iban: '', logo: '' },
+      colore: '#2b4a6f',
+      validitaGiorni: '30',
+      condizioni: CONDIZIONI_BASE,
+    };
+  }
+  function rigaVuota(iva) {
+    return { id: nuovoId(), descrizione: '', unita: 'a corpo', quantita: '1', prezzo: '', iva: iva || '22' };
+  }
+  function preventivoNuovo() {
+    var oggi = C.oggiISO();
+    return {
+      id: nuovoId(), creato: Date.now(), aggiornato: Date.now(),
+      numero: C.prossimoNumero(Number(oggi.slice(0, 4)), stato ? stato.preventivi.map(function (p) { return p.numero; }) : []),
+      data: oggi,
+      validitaGiorni: stato ? stato.impostazioni.validitaGiorni : '30',
+      oggetto: '',
+      cliente: { nome: '', indirizzo: '', referente: '', contatto: '', cantiere: '' },
+      righe: [rigaVuota()],
+      sconto: { tipo: 'percentuale', valore: '' },
+      acconto: '',
+      condizioni: stato ? stato.impostazioni.condizioni : CONDIZIONI_BASE,
+      note: '',
+    };
+  }
+
+  /** Rende "buoni" i dati letti dal browser o da un file: qualunque cosa ci sia dentro, esce un preventivo valido. */
+  function normalizzaPreventivo(p) {
+    p = p && typeof p === 'object' ? p : {};
+    var c = p.cliente && typeof p.cliente === 'object' ? p.cliente : {};
+    var s = p.sconto && typeof p.sconto === 'object' ? p.sconto : {};
+    var righe = Array.isArray(p.righe) ? p.righe : [];
+    var base = preventivoNuovo();
+    var out = {
+      id: testo(p.id) || nuovoId(),
+      creato: Number(p.creato) || Date.now(),
+      aggiornato: Number(p.aggiornato) || Date.now(),
+      numero: testo(p.numero), data: testo(p.data), validitaGiorni: String(p.validitaGiorni == null ? '' : p.validitaGiorni),
+      oggetto: testo(p.oggetto),
+      cliente: { nome: testo(c.nome), indirizzo: testo(c.indirizzo), referente: testo(c.referente), contatto: testo(c.contatto), cantiere: testo(c.cantiere) },
+      righe: righe.map(function (r) {
+        r = r && typeof r === 'object' ? r : {};
+        return {
+          id: testo(r.id) || nuovoId(), descrizione: testo(r.descrizione),
+          unita: UNITA.indexOf(r.unita) !== -1 ? r.unita : 'a corpo',
+          quantita: String(r.quantita == null ? '' : r.quantita), prezzo: String(r.prezzo == null ? '' : r.prezzo),
+          iva: ALIQUOTE.indexOf(String(r.iva)) !== -1 ? String(r.iva) : '22',
+        };
+      }),
+      sconto: { tipo: s.tipo === 'euro' ? 'euro' : 'percentuale', valore: String(s.valore == null ? '' : s.valore) },
+      acconto: String(p.acconto == null ? '' : p.acconto),
+      condizioni: testo(p.condizioni), note: testo(p.note),
+    };
+    if (!out.righe.length) out.righe.push(rigaVuota());
+    if (!out.numero) out.numero = base.numero;
+    return out;
+  }
+  function normalizzaStato(dati) {
+    dati = dati && typeof dati === 'object' ? dati : {};
+    var imp = dati.impostazioni && typeof dati.impostazioni === 'object' ? dati.impostazioni : {};
+    var d = imp.ditta && typeof imp.ditta === 'object' ? imp.ditta : {};
+    var base = impostazioniBase();
+    var logo = testo(d.logo);
+    var s = {
+      versione: 1,
+      impostazioni: {
+        ditta: { nome: testo(d.nome), piva: testo(d.piva), indirizzo: testo(d.indirizzo), telefono: testo(d.telefono),
+                 email: testo(d.email), iban: testo(d.iban), logo: logo.indexOf('data:image/') === 0 ? logo : '' },
+        colore: /^#[0-9a-f]{6}$/i.test(testo(imp.colore)) ? imp.colore : base.colore,
+        validitaGiorni: String(imp.validitaGiorni == null ? base.validitaGiorni : imp.validitaGiorni),
+        condizioni: typeof imp.condizioni === 'string' ? imp.condizioni : base.condizioni,
+      },
+      preventivi: [],
+      corrente: testo(dati.corrente),
+      ultimaCopia: Number(dati.ultimaCopia) || null,
+    };
+    stato = s; // serve a preventivoNuovo() per il numero progressivo
+    (Array.isArray(dati.preventivi) ? dati.preventivi : []).forEach(function (p) { s.preventivi.push(normalizzaPreventivo(p)); });
+    if (!s.preventivi.length) s.preventivi.push(preventivoNuovo());
+    if (!s.preventivi.some(function (p) { return p.id === s.corrente; })) s.corrente = s.preventivi[0].id;
+    return s;
+  }
+
+  function corrente() {
+    return stato.preventivi.filter(function (p) { return p.id === stato.corrente; })[0];
+  }
+  function eVuoto(p) {
+    return !p.cliente.nome && !p.oggetto && p.righe.every(function (r) { return !r.descrizione && !r.prezzo; });
+  }
+
+  // ---- Salvataggio nel browser -------------------------------------------------------------
+  function caricaDalBrowser() {
+    var grezzo = null;
+    try { grezzo = window.localStorage.getItem(CHIAVE); }
+    catch (e) { archivioOk = false; }
+    var dati = null;
+    if (grezzo) {
+      try { dati = JSON.parse(grezzo); }
+      catch (e2) { dati = null; mostraAvvisoArchivio('I dati salvati nel browser sembrano rovinati e non si leggono. Se hai una copia, usa "Copia dei dati" > "Recupera da una copia". Attenzione: se modifichi qualcosa adesso, i dati rovinati vengono sovrascritti.'); }
+    }
+    stato = null;
+    return normalizzaStato(dati);
+  }
+
+  var timerSalva = null;
+  function salvaSubito() {
+    clearTimeout(timerSalva);
+    var p = corrente();
+    if (p) p.aggiornato = Date.now();
+    try {
+      window.localStorage.setItem(CHIAVE, JSON.stringify(stato));
+      if (archivioOk) { nascondiAvvisoArchivio(); }
+      var ora = new Date();
+      $('#statoSalvataggio').textContent = 'Salvato alle ' + String(ora.getHours()).padStart(2, '0') + ':' + String(ora.getMinutes()).padStart(2, '0');
+    } catch (e) {
+      archivioOk = false;
+      mostraAvvisoArchivio('Il browser non riesce a salvare i dati (spazio pieno o navigazione privata). Scarica subito una copia da "Copia dei dati" per non perdere il lavoro.');
+      $('#statoSalvataggio').textContent = 'NON salvato';
+    }
+  }
+  function salvaConCalma() { clearTimeout(timerSalva); timerSalva = setTimeout(salvaSubito, 300); }
+  function mostraAvvisoArchivio(msg) { var a = $('#avvisoArchivio'); a.textContent = msg; a.hidden = false; }
+  function nascondiAvvisoArchivio() { $('#avvisoArchivio').hidden = true; }
+
+  // ---- Collegamento tra i campi del modulo e lo stato -------------------------------------
+  // Ogni campo ha data-k="p.cliente.nome" (p = preventivo corrente) o "i.ditta.nome" (i = impostazioni).
+  function radiceDi(prefisso) { return prefisso === 'p' ? corrente() : stato.impostazioni; }
+  function leggiPercorso(k) {
+    var parti = k.split('.'); var o = radiceDi(parti.shift());
+    for (var i = 0; i < parti.length && o != null; i++) o = o[parti[i]];
+    return o == null ? '' : o;
+  }
+  function scriviPercorso(k, valore) {
+    var parti = k.split('.'); var o = radiceDi(parti.shift());
+    for (var i = 0; i < parti.length - 1; i++) o = o[parti[i]];
+    o[parti[parti.length - 1]] = valore;
+  }
+  function riempiModulo() {
+    $$('[data-k]').forEach(function (el) { el.value = leggiPercorso(el.getAttribute('data-k')); });
+    var logo = stato.impostazioni.ditta.logo;
+    var img = $('#logoAnteprima');
+    img.hidden = !logo; if (logo) img.src = logo;
+    $('#btnTogliLogo').hidden = !logo;
+    disegnaRighe();
+  }
+
+  // ---- Righe dei lavori --------------------------------------------------------------------
+  function opzioni(valori, scelto, etichetta) {
+    return valori.map(function (v) {
+      return '<option value="' + esc(v) + '"' + (v === scelto ? ' selected' : '') + '>' + esc(etichetta ? etichetta(v) : v) + '</option>';
+    }).join('');
+  }
+  function disegnaRighe() {
+    var p = corrente();
+    $('#elencoRighe').innerHTML = p.righe.map(function (r, i) {
+      return '<div class="riga" data-id="' + esc(r.id) + '">' +
+        '<div class="riga-testa"><span class="num">Lavoro ' + (i + 1) + '</span>' +
+        '<button class="btn piccolo" type="button" data-az="su"' + (i === 0 ? ' disabled' : '') + ' aria-label="Sposta su">↑</button>' +
+        '<button class="btn piccolo" type="button" data-az="giu"' + (i === p.righe.length - 1 ? ' disabled' : '') + ' aria-label="Sposta giù">↓</button>' +
+        '<button class="btn piccolo pericolo" type="button" data-az="elimina">Elimina</button></div>' +
+        '<textarea rows="2" data-riga="descrizione" placeholder="Descrizione del lavoro">' + esc(r.descrizione) + '</textarea>' +
+        '<div class="riga-campi">' +
+        '<label class="campo"><span>Unità</span><select data-riga="unita">' + opzioni(UNITA, r.unita) + '</select></label>' +
+        '<label class="campo"><span>Quantità</span><input type="text" inputmode="decimal" data-riga="quantita" value="' + esc(r.quantita) + '"></label>' +
+        '<label class="campo"><span>Prezzo unitario (€)</span><input type="text" inputmode="decimal" data-riga="prezzo" value="' + esc(r.prezzo) + '"></label>' +
+        '<label class="campo"><span>IVA</span><select data-riga="iva">' + opzioni(ALIQUOTE, r.iva, function (v) { return v === 'esente' ? 'Esente' : v + '%'; }) + '</select></label>' +
+        '<span></span><div class="importo" data-importo></div>' +
+        '</div></div>';
+    }).join('');
+    aggiorna(false);
+  }
+  function rigaPerId(id) { return corrente().righe.filter(function (r) { return r.id === id; })[0]; }
+
+  // ---- Aggiornamento di tutto dopo ogni modifica -------------------------------------------
+  function calcola() {
+    var p = corrente();
+    return C.calcolaPreventivo({ righe: p.righe, sconto: p.sconto, acconto: p.acconto });
+  }
+  function aggiorna(salva) {
+    var calc = calcola();
+    aggiornaModulo(calc);
+    disegnaAnteprima(calc);
+    avvisoCopia();
+    if (salva !== false) salvaConCalma();
+  }
+  function aggiornaModulo(calc) {
+    $$('.riga').forEach(function (div, i) {
+      var r = calc.righe[i];
+      if (r) $('[data-importo]', div).textContent = C.formattaEuro(r.importo);
+      var err = calc.errori.righe.filter(function (e) { return e.indice === i; })[0];
+      $('[data-riga="quantita"]', div).classList.toggle('errore-campo', !!(err && err.quantita));
+      $('[data-riga="prezzo"]', div).classList.toggle('errore-campo', !!(err && err.prezzo));
+    });
+    $('#inSconto').classList.toggle('errore-campo', calc.errori.sconto);
+    $('#inAcconto').classList.toggle('errore-campo', calc.errori.acconto);
+    var h = '<div><span>Totale lavori</span><span>' + C.formattaEuro(calc.subtotale) + '</span></div>';
+    if (calc.sconto > 0) h += '<div><span>Sconto</span><span>-' + C.formattaEuro(calc.sconto) + '</span></div>';
+    h += '<div><span>IVA</span><span>' + C.formattaEuro(calc.iva) + '</span></div>';
+    h += '<div class="tot"><span>Totale da pagare</span><span>' + C.formattaEuro(calc.totale) + '</span></div>';
+    if (calc.acconto > 0) h += '<div><span>Saldo dopo l\'acconto</span><span>' + C.formattaEuro(calc.saldo) + '</span></div>';
+    $('#riepilogoForm').innerHTML = h;
+  }
+
+  // ---- Anteprima del foglio A4 -------------------------------------------------------------
+  function ph(valore, segnaposto) { return valore ? esc(valore) : '<span class="ph">' + esc(segnaposto) + '</span>'; }
+
+  function disegnaAnteprima(calc) {
+    var p = corrente(); var imp = stato.impostazioni; var d = imp.ditta; var c = p.cliente;
+    var foglio = $('#foglio');
+    foglio.style.setProperty('--acc', imp.colore);
+
+    var contattiDitta = [d.indirizzo, d.piva ? 'P. IVA ' + d.piva : '', d.telefono, d.email].filter(Boolean);
+    var giorni = parseInt(p.validitaGiorni, 10);
+    var scadenza = giorni > 0 ? C.formattaData(C.aggiungiGiorni(p.data, giorni)) : '';
+
+    var righeHtml = '';
+    var n = 0;
+    p.righe.forEach(function (r, i) {
+      var vuota = !r.descrizione && !r.prezzo;
+      if (vuota) return;
+      n++;
+      var x = calc.righe[i];
+      righeHtml += '<tr><td class="c">' + n + '</td><td>' + multiriga(r.descrizione) + '</td>' +
+        '<td class="c">' + esc(r.unita) + '</td>' +
+        '<td class="d">' + C.formattaQuantita(x.quantita) + '</td>' +
+        '<td class="d">' + C.formattaEuro(x.prezzo, false) + '</td>' +
+        '<td class="c">' + (r.iva === 'esente' ? 'Esente' : esc(r.iva) + '%') + '</td>' +
+        '<td class="d"><b>' + C.formattaEuro(x.importo, false) + '</b></td></tr>';
+    });
+    if (!righeHtml) righeHtml = '<tr><td colspan="7"><span class="ph">Aggiungi i lavori nel modulo a sinistra: compariranno qui.</span></td></tr>';
+
+    var tot = '<div><span>Totale lavori</span><span>' + C.formattaEuro(calc.subtotale) + '</span></div>';
+    if (calc.sconto > 0) {
+      tot += '<div><span>Sconto' + (p.sconto.tipo === 'percentuale' && C.leggiPercentuale(p.sconto.valore) ? ' ' + esc(p.sconto.valore.trim()) + '%' : '') + '</span><span>-' + C.formattaEuro(calc.sconto) + '</span></div>';
+      tot += '<div><span>Imponibile</span><span>' + C.formattaEuro(calc.imponibile) + '</span></div>';
+    }
+    calc.gruppi.forEach(function (g) {
+      if (g.aliquota === null) tot += '<div><span>Esente IVA</span><span>' + C.formattaEuro(g.imponibile) + '</span></div>';
+      else tot += '<div><span>IVA ' + C.formattaPercentuale(g.aliquota * 100) + '% su ' + C.formattaEuro(g.imponibile) + '</span><span>' + C.formattaEuro(g.iva) + '</span></div>';
+    });
+    tot += '<div class="grande"><span>TOTALE</span><span>' + C.formattaEuro(calc.totale) + '</span></div>';
+    if (calc.acconto > 0) {
+      tot += '<div><span>Acconto richiesto</span><span>' + C.formattaEuro(calc.acconto) + '</span></div>';
+      tot += '<div><b>Saldo</b><b>' + C.formattaEuro(calc.saldo) + '</b></div>';
+    }
+
+    var logoOk = d.logo && d.logo.indexOf('data:image/') === 0;
+    foglio.innerHTML =
+      '<div class="testata">' +
+        '<div class="ditta">' + (logoOk ? '<img alt="" src="' + esc(d.logo) + '">' : '') +
+          '<div><div class="ditta-nome">' + ph(d.nome, 'Nome della tua ditta') + '</div>' +
+          '<div class="piccolo">' + (contattiDitta.length ? contattiDitta.map(esc).join('<br>') : '<span class="ph">Indirizzo, P. IVA, telefono, email</span>') + '</div></div></div>' +
+        '<div class="doc-tipo"><div class="et">PREVENTIVO</div>' +
+          '<div>N. <b>' + ph(p.numero, '—') + '</b></div>' +
+          '<div>Data ' + ph(C.formattaData(p.data), 'gg/mm/aaaa') + '</div>' +
+          (scadenza ? '<div>Valido fino al ' + scadenza + '</div>' : '') + '</div>' +
+      '</div>' +
+      '<div class="due">' +
+        '<div class="blocco"><div class="et">Cliente</div><div><b>' + ph(c.nome, 'Nome del cliente') + '</b></div>' +
+          (c.indirizzo ? '<div>' + esc(c.indirizzo) + '</div>' : '') +
+          (c.referente ? '<div>Referente: ' + esc(c.referente) + '</div>' : '') +
+          (c.contatto ? '<div>' + esc(c.contatto) + '</div>' : '') + '</div>' +
+        '<div class="blocco">' + (c.cantiere ? '<div class="et">Cantiere</div><div>' + esc(c.cantiere) + '</div>' : '') + '</div>' +
+      '</div>' +
+      (p.oggetto ? '<h3 class="oggetto">Oggetto: ' + esc(p.oggetto) + '</h3>' : '') +
+      '<table><thead><tr><th class="c">N.</th><th>Descrizione</th><th class="c">U.M.</th><th class="d">Qtà</th><th class="d">Prezzo €</th><th class="c">IVA</th><th class="d">Importo €</th></tr></thead>' +
+        '<tbody>' + righeHtml + '</tbody></table>' +
+      '<div class="tot-box">' + tot + '</div>' +
+      (p.condizioni ? '<div class="testo-libero"><div class="blocco"><div class="et">Condizioni</div></div>' + multiriga(p.condizioni) + '</div>' : '') +
+      (p.note ? '<div class="testo-libero"><div class="blocco"><div class="et">Note</div></div>' + multiriga(p.note) + '</div>' : '') +
+      (d.iban ? '<div class="testo-libero piccolo">Coordinate bancarie per il pagamento: IBAN ' + esc(d.iban) + '</div>' : '') +
+      '<div class="firme"><div class="firma">Per accettazione (data e firma del cliente)</div><div class="firma">' + esc(d.nome || 'Il fornitore') + '</div></div>';
+    adattaScala();
+  }
+
+  /** Su schermo il foglio A4 è più largo della colonna: lo rimpiccioliamo (solo a vista, la stampa resta al 100%). */
+  function adattaScala() {
+    var col = $('#colAnteprima'); var carta = $('#carta'); var box = $('#cartaBox'); var f = $('#foglio');
+    if (!col.offsetWidth) return;
+    var larghezza = f.offsetWidth;
+    var s = Math.min(1, (col.clientWidth - 40) / larghezza);
+    carta.style.transform = 'scale(' + s + ')';
+    box.style.width = Math.round(larghezza * s) + 'px';
+    box.style.height = Math.round(f.offsetHeight * s) + 'px';
+  }
+
+  // ---- Avviso "fai una copia" --------------------------------------------------------------
+  function avvisoCopia() {
+    var utile = stato.preventivi.some(function (p) { return !eVuoto(p); });
+    var giorniDa = stato.ultimaCopia ? Math.floor((Date.now() - stato.ultimaCopia) / 86400000) : null;
+    var mostra = utile && (giorniDa === null || giorniDa >= 7);
+    $('#avvisoCopia').hidden = !mostra;
+    if (mostra) $('#avvisoCopiaTesto').textContent = giorniDa === null
+      ? 'Non hai ancora scaricato una copia dei tuoi preventivi. Se il browser perde i dati, senza copia non si recuperano.'
+      : 'L\'ultima copia dei tuoi preventivi è di ' + giorniDa + ' giorni fa. Conviene scaricarne una nuova.';
+  }
+
+  // ---- Finestre di dialogo -----------------------------------------------------------------
+  function chiedi(titolo, messaggio, etichettaSi) {
+    return new Promise(function (risolvi) {
+      var dlg = $('#dlgConferma');
+      $('#confTitolo').textContent = titolo; $('#confTesto').textContent = messaggio;
+      $('#confSi').textContent = etichettaSi || 'Conferma';
+      function chiudi(esito) { $('#confSi').onclick = $('#confNo').onclick = null; dlg.onclose = null; dlg.close(); risolvi(esito); }
+      $('#confSi').onclick = function () { chiudi(true); };
+      $('#confNo').onclick = function () { chiudi(false); };
+      dlg.onclose = function () { risolvi(false); };
+      dlg.showModal();
+    });
+  }
+  function aggiornaElenco() {
+    var ul = $('#listaPreventivi');
+    var ordinati = stato.preventivi.slice().sort(function (a, b) { return b.aggiornato - a.aggiornato; });
+    ul.innerHTML = ordinati.map(function (p) {
+      var calc = C.calcolaPreventivo({ righe: p.righe, sconto: p.sconto, acconto: p.acconto });
+      return '<li class="' + (p.id === stato.corrente ? 'attuale' : '') + '" data-id="' + esc(p.id) + '">' +
+        '<div class="info"><b>N. ' + esc(p.numero) + ' — ' + esc(p.cliente.nome || 'senza cliente') + '</b>' +
+        '<span>' + esc(C.formattaData(p.data)) + ' · ' + C.formattaEuro(calc.totale) + (p.oggetto ? ' · ' + esc(p.oggetto) : '') + '</span></div>' +
+        '<div><button class="btn piccolo" data-az="apri" type="button">Apri</button> ' +
+        '<button class="btn piccolo" data-az="duplica" type="button">Copia</button> ' +
+        '<button class="btn piccolo pericolo" data-az="cancella" type="button">Elimina</button></div></li>';
+    }).join('');
+  }
+
+  // ---- Azioni sui preventivi ---------------------------------------------------------------
+  function apri(id) {
+    stato.corrente = id; riempiModulo(); aggiorna(); salvaSubito();
+  }
+  function nuovo() {
+    var p = corrente();
+    if (eVuoto(p)) { vai('modifica'); $('[data-k="p.cliente.nome"]').focus(); return; } // già vuoto: non ne accumulo
+    var n = preventivoNuovo(); stato.preventivi.push(n); stato.corrente = n.id;
+    riempiModulo(); salvaSubito(); vai('modifica'); $('[data-k="p.cliente.nome"]').focus();
+  }
+  function duplica(id) {
+    var orig = stato.preventivi.filter(function (p) { return p.id === id; })[0];
+    var copia = normalizzaPreventivo(JSON.parse(JSON.stringify(orig)));
+    copia.id = nuovoId(); copia.creato = Date.now();
+    copia.righe.forEach(function (r) { r.id = nuovoId(); });
+    copia.data = C.oggiISO();
+    copia.numero = C.prossimoNumero(Number(copia.data.slice(0, 4)), stato.preventivi.map(function (p) { return p.numero; }));
+    stato.preventivi.push(copia); stato.corrente = copia.id;
+    riempiModulo(); salvaSubito(); aggiornaElenco();
+  }
+  function cancella(id) {
+    stato.preventivi = stato.preventivi.filter(function (p) { return p.id !== id; });
+    if (!stato.preventivi.length) stato.preventivi.push(preventivoNuovo());
+    if (stato.corrente === id) stato.corrente = stato.preventivi[0].id;
+    riempiModulo(); salvaSubito(); aggiornaElenco();
+  }
+
+  // ---- Copia dei dati (scarica / recupera) -------------------------------------------------
+  function scaricaCopia() {
+    stato.ultimaCopia = Date.now();
+    salvaSubito();
+    var blob = new Blob([JSON.stringify(stato, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'copia-preventivi-' + C.oggiISO() + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    avvisoCopia();
+  }
+  function recuperaDaFile(file) {
+    var lettore = new FileReader();
+    lettore.onload = function () {
+      var dati;
+      try { dati = JSON.parse(String(lettore.result)); } catch (e) { dati = null; }
+      if (!dati || typeof dati !== 'object' || !Array.isArray(dati.preventivi)) {
+        chiedi('File non valido', 'Questo file non sembra una copia dei preventivi. Non ho cambiato nulla.', 'Ho capito');
+        return;
+      }
+      chiedi('Recuperare questa copia?', 'Nel file ci sono ' + dati.preventivi.length + ' preventivi. I dati che vedi adesso (' + stato.preventivi.length + ' preventivi) verranno sostituiti.', 'Sì, recupera')
+        .then(function (si) {
+          if (!si) return;
+          stato = normalizzaStato(dati); riempiModulo(); salvaSubito(); aggiornaElenco();
+          $('#dlgCopie').close();
+        });
+    };
+    lettore.readAsText(file);
+  }
+  function compilaEsempio() {
+    var p = corrente(); var d = stato.impostazioni.ditta;
+    if (!eVuoto(p)) return;
+    if (!d.nome) { d.nome = 'Edilizia Rossi (esempio)'; d.piva = '00000000000'; d.indirizzo = 'Via Esempio 1, 00000 Città'; d.telefono = '000 0000000'; d.email = 'esempio@example.com'; d.iban = 'IT00X0000000000000000000000'; }
+    p.cliente = { nome: 'Anna Bianchi (esempio)', indirizzo: 'Via Prova 2, 00000 Città', referente: '', contatto: '000 0000000', cantiere: 'Via Prova 2, 00000 Città' };
+    p.oggetto = 'Rifacimento bagno';
+    p.righe = [
+      { id: nuovoId(), descrizione: 'Demolizione rivestimenti e sanitari, trasporto e smaltimento macerie', unita: 'a corpo', quantita: '1', prezzo: '1.200', iva: '10' },
+      { id: nuovoId(), descrizione: 'Fornitura e posa pavimento in gres porcellanato', unita: 'mq', quantita: '8,5', prezzo: '65', iva: '10' },
+      { id: nuovoId(), descrizione: 'Fornitura sanitari e rubinetteria (prezzo d\'esempio)', unita: 'a corpo', quantita: '1', prezzo: '980,50', iva: '22' },
+    ];
+    p.sconto = { tipo: 'percentuale', valore: '5' };
+    p.acconto = '1000';
+    riempiModulo(); salvaSubito();
+    $('#dlgCopie').close();
+  }
+
+  // ---- Logo --------------------------------------------------------------------------------
+  /** Rimpicciolisce il logo (max 480 px) prima di salvarlo: un logo da 5 MB riempirebbe la memoria del browser. */
+  function caricaLogo(file) {
+    var lettore = new FileReader();
+    lettore.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var max = 480; var s = Math.min(1, max / Math.max(img.width, img.height));
+        var cv = document.createElement('canvas');
+        cv.width = Math.max(1, Math.round(img.width * s)); cv.height = Math.max(1, Math.round(img.height * s));
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        stato.impostazioni.ditta.logo = cv.toDataURL('image/png');
+        riempiModulo(); aggiorna();
+      };
+      img.onerror = function () { chiedi('Immagine non valida', 'Non riesco a leggere questa immagine. Prova con un file PNG o JPG.', 'Ho capito'); };
+      img.src = String(lettore.result);
+    };
+    lettore.readAsDataURL(file);
+  }
+
+  // ---- Stampa ------------------------------------------------------------------------------
+  function stampa() {
+    var p = corrente();
+    var titoloPrima = document.title;
+    // il nome del file PDF proposto dal browser è il titolo della pagina
+    document.title = ('Preventivo ' + p.numero + (p.cliente.nome ? ' - ' + p.cliente.nome : '')).replace(/[\\/:*?"<>|]/g, '-');
+    var ripristina = function () { document.title = titoloPrima; window.removeEventListener('afterprint', ripristina); };
+    window.addEventListener('afterprint', ripristina);
+    window.print();
+  }
+
+  // ---- Schede per schermi piccoli ----------------------------------------------------------
+  function vai(vista) { document.body.setAttribute('data-vista', vista); adattaScala(); }
+
+  // ---- Eventi ------------------------------------------------------------------------------
+  document.addEventListener('input', function (e) {
+    var el = e.target;
+    if (el.hasAttribute('data-k')) {
+      scriviPercorso(el.getAttribute('data-k'), el.value);
+      aggiorna();
+    } else if (el.hasAttribute('data-riga')) {
+      var r = rigaPerId(el.closest('.riga').getAttribute('data-id'));
+      r[el.getAttribute('data-riga')] = el.value;
+      aggiorna();
+    }
+  });
+  $('#elencoRighe').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-az]'); if (!b) return;
+    var p = corrente(); var id = b.closest('.riga').getAttribute('data-id');
+    var i = p.righe.map(function (r) { return r.id; }).indexOf(id);
+    var az = b.getAttribute('data-az');
+    if (az === 'elimina') { p.righe.splice(i, 1); if (!p.righe.length) p.righe.push(rigaVuota()); }
+    if (az === 'su' && i > 0) p.righe.splice(i - 1, 0, p.righe.splice(i, 1)[0]);
+    if (az === 'giu' && i < p.righe.length - 1) p.righe.splice(i + 1, 0, p.righe.splice(i, 1)[0]);
+    disegnaRighe(); salvaConCalma();
+  });
+  $('#btnAggiungiRiga').addEventListener('click', function () {
+    var p = corrente(); var ultima = p.righe[p.righe.length - 1];
+    p.righe.push(rigaVuota(ultima ? ultima.iva : '22')); // la nuova riga eredita l'IVA dell'ultima
+    disegnaRighe(); salvaConCalma();
+    var aree = $$('[data-riga="descrizione"]'); aree[aree.length - 1].focus();
+  });
+  $('#btnNuovo').addEventListener('click', nuovo);
+  $('#btnStampa').addEventListener('click', stampa);
+  $('#btnElenco').addEventListener('click', function () { aggiornaElenco(); $('#dlgElenco').showModal(); });
+  $('#btnCopie').addEventListener('click', function () { $('#btnEsempio').disabled = !eVuoto(corrente()); $('#dlgCopie').showModal(); });
+  $('#btnScarica').addEventListener('click', scaricaCopia);
+  $('#btnCopiaDaAvviso').addEventListener('click', scaricaCopia);
+  $('#fileRecupero').addEventListener('change', function (e) { if (e.target.files[0]) recuperaDaFile(e.target.files[0]); e.target.value = ''; });
+  $('#btnEsempio').addEventListener('click', compilaEsempio);
+  $('#fileLogo').addEventListener('change', function (e) { if (e.target.files[0]) caricaLogo(e.target.files[0]); e.target.value = ''; });
+  $('#btnTogliLogo').addEventListener('click', function () { stato.impostazioni.ditta.logo = ''; riempiModulo(); aggiorna(); });
+  $('#tabModifica').addEventListener('click', function () { vai('modifica'); });
+  $('#tabAnteprima').addEventListener('click', function () { vai('anteprima'); });
+  $$('[data-chiudi]').forEach(function (b) { b.addEventListener('click', function () { b.closest('dialog').close(); }); });
+  $('#listaPreventivi').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-az]'); if (!b) return;
+    var id = b.closest('li').getAttribute('data-id'); var az = b.getAttribute('data-az');
+    if (az === 'apri') { apri(id); $('#dlgElenco').close(); vai('modifica'); }
+    if (az === 'duplica') duplica(id);
+    if (az === 'cancella') {
+      var p = stato.preventivi.filter(function (x) { return x.id === id; })[0];
+      chiedi('Eliminare il preventivo?', 'Il preventivo N. ' + p.numero + (p.cliente.nome ? ' di ' + p.cliente.nome : '') + ' verrà eliminato. Non si può annullare (a meno che tu non abbia una copia).', 'Sì, elimina')
+        .then(function (si) { if (si) cancella(id); });
+    }
+  });
+  window.addEventListener('resize', adattaScala);
+  // se il browser sta per chiudersi con un salvataggio in attesa, salva subito
+  window.addEventListener('pagehide', function () { if (timerSalva) salvaSubito(); });
+
+  // ---- Avvio -------------------------------------------------------------------------------
+  stato = caricaDalBrowser();
+  if (stato.preventivi.length === 1 && eVuoto(stato.preventivi[0]) && !stato.impostazioni.ditta.nome) $('#sezDitta').open = true; // prima volta: invito a compilare la ditta
+  riempiModulo();
+  salvaSubito();
+})();
+</script>
+</body>
+</html>

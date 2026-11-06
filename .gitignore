@@ -1,0 +1,23 @@
+.DS_Store
+node_modules/
+
+# dati veri (preventivi reali, copie di backup dell'app, dati di clienti): solo in locale o su Drive
+dati/
+
+# chiavi e segreti
+.env
+.env.*
+!.env.example
+
+# file temporanei e generati
+.tmp/
+
+# permessi personali della postazione
+.claude/settings.local.json
+.claude/worktrees/
+
+# file temporanei del browser automatico (Playwright)
+.playwright-mcp/
+
+# note personali di Claude Code su questa postazione
+CLAUDE.local.md
