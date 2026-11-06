@@ -1,6 +1,6 @@
 # Log sessioni — Preventivi Edili
 
-Registro delle modifiche e decisioni reali sul progetto (Marco e Roberto). **Più recente in cima.**
+Registro delle modifiche e decisioni reali sul progetto (Marco). **Più recente in cima.**
 
 Formato:
 

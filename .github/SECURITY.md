@@ -9,5 +9,5 @@ prima di ogni commit e la CI su ogni push. Non riconosce tutto (nomi, importi, n
 scritti in altro modo): non sostituisce l'attenzione.
 
 Se hai committato per errore un dato sensibile o una credenziale, non basta cancellarla in un
-commit successivo: avvisa subito Marco e Roberto per ruotare la credenziale e ripulire la storia.
+commit successivo: avvisa subito Marco per ruotare la credenziale e ripulire la storia.
 Non scrivere il dettaglio in una Issue.

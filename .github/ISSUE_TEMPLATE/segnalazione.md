@@ -8,4 +8,4 @@ labels: ""
 
 **Perché**
 
-**Chi la fa** (`marco` / `roberto`) e **priorità** (alta / media / bassa)
+**Priorità** (alta / media / bassa)

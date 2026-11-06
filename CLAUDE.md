@@ -7,7 +7,7 @@ standard di `romaton-srl` (modello: Gruppomedica Prima Nota, ADR in `docs/adr/00
 
 - Stack: HTML + CSS + JavaScript puro. Nessuna libreria, nessun server, nessun build. Deve aprirsi
   con doppio clic su `src/preventivi/index.html` (protocollo `file://`).
-- Chi mantiene il codice: Marco e Roberto, non tecnici esperti. Nomi chiari, commenti sul perché,
+- Chi mantiene il codice: Marco, non tecnico esperto. Nomi chiari, commenti sul perché,
   nessuna magia. Lingua del codice, dei commenti e dei commit: italiano.
 - I soldi si calcolano in **centesimi interi** (mai decimali): le funzioni stanno in
   `src/preventivi/calcoli.js` e hanno test in `tests/`.
