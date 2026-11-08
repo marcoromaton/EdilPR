@@ -7,7 +7,7 @@
 <!-- Icona della scheda: è lo stesso logo di assets/logo-edox.svg, scritto qui dentro per non dipendere da altri file. -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%232f6b4f%22/%3E%3Cg transform=%22rotate(-30 32 32)%22 fill=%22%23f6f1e4%22%3E%3Crect x=%2219%22 y=%2214%22 width=%228%22 height=%2236%22 rx=%222%22/%3E%3Crect x=%2219%22 y=%2214%22 width=%2226%22 height=%228%22 rx=%222%22/%3E%3Crect x=%2219%22 y=%2228%22 width=%2220%22 height=%228%22 rx=%222%22/%3E%3Crect x=%2219%22 y=%2242%22 width=%2226%22 height=%228%22 rx=%222%22/%3E%3C/g%3E%3C/svg%3E">
 <!--
-  Preventivi Edili — app a pagina unica, senza server e senza librerie.
+  Edox (preventivi edili) — app a pagina unica, senza server e senza librerie.
   Come è fatta (dall'alto in basso in questo file):
     1. STILE      (CSS): aspetto della pagina e, in fondo, regole per la STAMPA.
     2. PAGINA     (HTML): barra in alto, colonna del modulo a sinistra, anteprima del foglio A4 a destra.
@@ -307,7 +307,7 @@ dialog::backdrop{background:rgba(20,25,33,.55)}
 
   var COLORE_BASE = '#2f6b4f';                 // verde del logo Edox: colore predefinito del preventivo
   var COLORE_VECCHIO = '#2b4a6f';              // blu delle prime versioni: se è ancora quello, passa al verde
-  var CHIAVE = 'preventivi-edili-v1';            // nome sotto cui il browser conserva i dati
+  var CHIAVE = 'preventivi-edili-v1';            // nome sotto cui il browser conserva i dati. NON cambiarlo: i preventivi già salvati sparirebbero
   var UNITA = ['a corpo', 'mq', 'ml', 'mc', 'ore', 'giorni', 'pz', 'kg'];
   var ALIQUOTE = ['22', '10', '4', 'esente'];
   var CONDIZIONI_BASE = 'Pagamento: acconto all\'accettazione del preventivo, saldo a fine lavori.\n' +

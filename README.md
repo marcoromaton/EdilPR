@@ -1,12 +1,14 @@
-# Preventivi Edili
+# Edox
 
-Web app per fare preventivi edili: si compilano i dati a sinistra, a destra compare il documento
+Edox è una web app per fare preventivi edili: si compilano i dati a sinistra, a destra compare il documento
 A4 già impaginato (stile PandaDoc, semplice), poi si stampa o si salva in PDF dal browser.
 Nata per un freelancer del settore edile. Struttura standard di `romaton-srl`.
 
+L'app è pubblicata su https://marcoromaton.github.io/EdilPR/ (il repository e il link si chiamano ancora `EdilPR`, il vecchio nome: rinominarli cambierebbe l'indirizzo e i dati salvati nel browser non comparirebbero più da quello nuovo).
+
 ## Come si usa
 
-Apri `src/preventivi/index.html` con doppio clic (meglio Chrome o Edge). Nessuna installazione,
+Apri il link qui sopra, oppure `src/preventivi/index.html` con doppio clic (meglio Chrome o Edge). Nessuna installazione,
 nessun server, nessuna connessione internet. Guida per l'utente: [docs/uso-per-papa.md](docs/uso-per-papa.md).
 
 ## Da dove partire

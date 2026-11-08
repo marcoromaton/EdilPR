@@ -1,12 +1,12 @@
 ---
 name: log-sessione
-description: Aggiunge una voce a LOG.md di Preventivi Edili per una modifica o decisione reale appena fatta, nel formato data/persona/orario. Usare dopo ogni modifica o decisione reale (non un tentativo, non una bozza) — un buon momento pratico è lo stesso istante di un git commit — o quando si invoca /log-sessione.
+description: Aggiunge una voce a LOG.md di Edox per una modifica o decisione reale appena fatta, nel formato data/persona/orario. Usare dopo ogni modifica o decisione reale (non un tentativo, non una bozza) — un buon momento pratico è lo stesso istante di un git commit — o quando si invoca /log-sessione.
 when_to_use: Subito dopo aver fatto una modifica o decisione reale sul progetto (codice scritto, script eseguito, file committato, decisione presa) — non per lavoro ancora in corso o non confermato.
 ---
 
 ## Dove scrivi
 
-`LOG.md` nella radice di questo repository (Preventivi Edili).
+`LOG.md` nella radice di questo repository (Edox).
 
 ## Formato (fisso, non cambiarlo)
 

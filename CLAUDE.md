@@ -1,4 +1,4 @@
-# Preventivi Edili
+# Edox
 
 Web app per preventivi edili (form + anteprima A4 live + stampa/PDF dal browser). Struttura
 standard di `romaton-srl` (modello: Gruppomedica Prima Nota, ADR in `docs/adr/0001-struttura-repository.md`).
@@ -12,6 +12,12 @@ standard di `romaton-srl` (modello: Gruppomedica Prima Nota, ADR in `docs/adr/00
 - I soldi si calcolano in **centesimi interi** (mai decimali): le funzioni stanno in
   `src/preventivi/calcoli.js` e hanno test in `tests/`.
 - Utente finale non tecnico: ogni testo visibile in italiano semplice.
+
+## Nome, link e dati salvati
+
+- Nome dell'app: **Edox** (logo: E di travi inclinata di 30°, verde `#2f6b4f` e panna `#f6f1e4`, file `assets/logo-edox.svg`).
+- Repository e link pubblico si chiamano ancora `EdilPR` (vecchio nome): `https://marcoromaton.github.io/EdilPR/`. Rinominarli cambia l'indirizzo e il browser lega i dati all'indirizzo: prima va fatta una copia dei dati.
+- **Non cambiare** `CHIAVE = 'preventivi-edili-v1'` in `index.html`: è il nome sotto cui il browser salva i preventivi, cambiarlo li fa sparire.
 
 ## Dove stanno stato e decisioni
 

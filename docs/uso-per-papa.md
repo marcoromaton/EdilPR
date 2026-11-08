@@ -1,9 +1,9 @@
-# Preventivi Edili: come si usa
+# Edox: come si usa
 
 ## Aprire il programma
-Fai doppio clic sul file **index.html** (nella cartella `src/preventivi`). Si apre nel browser.
-Usa sempre **lo stesso browser** (meglio Google Chrome): i preventivi restano salvati lì.
-Non serve internet.
+Apri il link: **https://marcoromaton.github.io/EdilPR/** (puoi salvarlo tra i preferiti del browser).
+Usa sempre **lo stesso browser** (meglio Google Chrome) e sempre lo stesso link: i preventivi restano salvati nel browser e il link nuovo o diverso parte vuoto.
+Serve internet solo per aprire la pagina la prima volta.
 
 ## La prima volta
 1. Apri "La mia ditta" e scrivi nome, partita IVA, indirizzo, telefono. Puoi aggiungere il logo.

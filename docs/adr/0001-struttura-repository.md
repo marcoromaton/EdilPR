@@ -9,7 +9,7 @@ Il repository segue lo standard comune di `romaton-srl`, copiato da Gruppomedica
 `CLAUDE.md` + `.claude/{rules,agents,skills,hooks,settings.json}`.
 
 ## Differenze rispetto a Prima Nota
-| Prima Nota | Preventivi Edili | Perché |
+| Prima Nota | Edox | Perché |
 |---|---|---|
 | test Python (`unittest`) nella CI | test JavaScript (`node --test`) | l'app è in JavaScript |
 | `*.csv` e `*.xlsx` fuori da git | non esclusi | qui non ci sono export di banca |

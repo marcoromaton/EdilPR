@@ -1,4 +1,4 @@
-# Log sessioni — Preventivi Edili
+# Log sessioni — Edox
 
 Registro delle modifiche e decisioni reali sul progetto (Marco). **Più recente in cima.**
 
@@ -20,6 +20,7 @@ Formato:
 - 13:25 — **Cambio nome in Edox e nuovo logo**: E di travi con una "d" piccola, panna e verde (scelta di Marco, al posto di EdilPR). File `assets/logo-edox.svg` (sostituisce `logo-edilpr.svg`, mai committato); in `src/preventivi/index.html` cambiati nome nella barra, titolo della pagina e icona della scheda. Controllato con screenshot della barra in Chrome senza interfaccia. Non toccati: colori dell'app (restano blu) e nome del repository/link (restano EdilPR). Non ancora committato né pubblicato.
 - 13:27 — **Logo Edox cambiato**: tolta la "d", la E di travi è ruotata di 30° verso sinistra (decisione di Marco). Aggiornati `assets/logo-edox.svg`, barra e icona della scheda in `src/preventivi/index.html`. Verificato con screenshot in Chrome senza interfaccia; non verificata l'icona a 16 px nella scheda reale. Non ancora committato né pubblicato.
 - 13:28 — **Colori dell'app in verde e panna** (coerenti col logo Edox), in `src/preventivi/index.html`: sfondi panna, barra e pulsanti verdi `#2f6b4f`, foglio del preventivo con colore predefinito verde (la carta resta bianca). Chi aveva ancora il blu predefinito `#2b4a6f` salvato passa al verde; un colore scelto a mano resta. Verificato con screenshot in Chrome senza interfaccia (modulo e foglio, schermo largo, anche con il blu vecchio salvato). Non verificati: stampa in PDF con il nuovo colore, telefono, Safari/Firefox. Non ancora committato né pubblicato.
+- 14:09 — **Testi allineati al nome Edox**: README, CLAUDE.md (nuova sezione "Nome, link e dati salvati"), guida per il papà (ora apre dal link), ADR, skill del log, intestazione di LOG.md e commenti di `index.html`. Il repository e il link restano `EdilPR`; la chiave di salvataggio `preventivi-edili-v1` resta invariata di proposito (cambiarla farebbe sparire i preventivi salvati). Controllo con ricerca testuale del vecchio nome. Non ancora committato.
 
 ## 06/11/2026
 ### Marco
