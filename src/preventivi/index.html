@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Preventivi Edili</title>
+<title>Edox - Preventivi</title>
+<!-- Icona della scheda: è lo stesso logo di assets/logo-edox.svg, scritto qui dentro per non dipendere da altri file. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%232f6b4f%22/%3E%3Cg transform=%22rotate(-30 32 32)%22 fill=%22%23f6f1e4%22%3E%3Crect x=%2219%22 y=%2214%22 width=%228%22 height=%2236%22 rx=%222%22/%3E%3Crect x=%2219%22 y=%2214%22 width=%2226%22 height=%228%22 rx=%222%22/%3E%3Crect x=%2219%22 y=%2228%22 width=%2220%22 height=%228%22 rx=%222%22/%3E%3Crect x=%2219%22 y=%2242%22 width=%2226%22 height=%228%22 rx=%222%22/%3E%3C/g%3E%3C/svg%3E">
 <!--
   Preventivi Edili — app a pagina unica, senza server e senza librerie.
   Come è fatta (dall'alto in basso in questo file):
@@ -15,8 +17,8 @@
 <style>
 /* ============================ 1. STILE ============================ */
 :root{
-  --bg:#eef0f3; --superficie:#fff; --linea:#dde1e7; --linea2:#c5cbd4;
-  --testo:#1c222b; --tenue:#667080; --primario:#2b4a6f; --primario-ink:#fff;
+  --bg:#f6f1e4; --superficie:#fffdf7; --linea:#e2dccb; --linea2:#cfc7b2;
+  --testo:#1f2a24; --tenue:#6b7a70; --primario:#2f6b4f; --primario-ink:#fffdf7;
   --errore:#b42318; --errore-bg:#fdecea; --avviso:#8a5a0b; --avviso-bg:#fff5e0; --ok:#2f7d4f;
   --r:10px;
 }
@@ -27,24 +29,26 @@ button,input,select,textarea{font:inherit;color:inherit}
 [hidden]{display:none!important}
 
 /* Barra in alto */
-.barra{height:56px;overflow-x:auto;background:#1f2630;color:#fff;display:flex;align-items:center;gap:8px;padding:0 14px}
-.barra .titolo{font-weight:700;font-size:18px;margin-right:auto;white-space:nowrap}
+.barra{height:56px;overflow-x:auto;background:#2f6b4f;color:#f6f1e4;display:flex;align-items:center;gap:8px;padding:0 14px}
+.barra .titolo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:20px;margin-right:auto;white-space:nowrap}
+.barra .titolo small{font-size:13px;font-weight:400;opacity:.65;margin-left:2px}
+.barra .logo{width:34px;height:34px;flex:none}
 .barra .btn{flex:none}
 .barra .salvato{font-size:13px;opacity:.7;white-space:nowrap}
 .btn{border:1px solid var(--linea2);background:var(--superficie);color:var(--testo);padding:8px 14px;min-height:40px;border-radius:9px;cursor:pointer;font-weight:600;white-space:nowrap}
-.btn:hover{background:#f5f6f8}
+.btn:hover{background:#f1ecdd}
 .btn.primario{background:var(--primario);border-color:var(--primario);color:var(--primario-ink)}
 .btn.primario:hover{filter:brightness(1.12)}
 .btn.piccolo{min-height:32px;padding:4px 10px;font-size:14px}
 .btn.pericolo{color:var(--errore);border-color:#e6b4ae}
-.barra .btn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff}
-.barra .btn:hover{background:rgba(255,255,255,.2)}
-.barra .btn.primario{background:var(--primario-ink);color:var(--primario);border-color:#fff}
+.barra .btn{background:rgba(246,241,228,.12);border-color:rgba(246,241,228,.35);color:#f6f1e4}
+.barra .btn:hover{background:rgba(246,241,228,.22)}
+.barra .btn.primario{background:#f6f1e4;color:#2f6b4f;border-color:#f6f1e4}
 
 /* Due colonne: modulo | anteprima */
 .layout{display:grid;grid-template-columns:minmax(380px,480px) 1fr;height:calc(100% - 56px)}
 .col-form{overflow:auto;padding:16px;border-right:1px solid var(--linea);background:var(--bg)}
-.col-anteprima{overflow:auto;padding:20px;background:#d9dde3}
+.col-anteprima{overflow:auto;padding:20px;background:#e6dfcb}
 .vista-tab{display:none}
 
 /* Modulo */
@@ -69,7 +73,7 @@ input:focus,select:focus,textarea:focus,.btn:focus-visible{outline:2px solid var
 .logo-riga img{max-height:44px;max-width:120px;border:1px solid var(--linea);border-radius:6px;padding:2px;background:#fff}
 
 /* Righe dei lavori */
-.riga{border:1px solid var(--linea);border-radius:9px;padding:10px;margin-bottom:10px;background:#fafbfc}
+.riga{border:1px solid var(--linea);border-radius:9px;padding:10px;margin-bottom:10px;background:#fbf8ef}
 .riga-testa{display:flex;align-items:center;gap:6px;margin-bottom:6px}
 .riga-testa .num{font-weight:700;color:var(--tenue);margin-right:auto}
 .riga-campi{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
@@ -86,17 +90,17 @@ dialog::backdrop{background:rgba(20,25,33,.55)}
 .dlg-azioni{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
 .elenco-p{list-style:none;margin:0;padding:0;max-height:55vh;overflow:auto}
 .elenco-p li{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--linea);border-radius:9px;padding:10px;margin-bottom:8px;flex-wrap:wrap}
-.elenco-p .attuale{border-color:var(--primario);background:#f2f6fb}
+.elenco-p .attuale{border-color:var(--primario);background:#e8f1ec}
 .elenco-p .info{min-width:0}
 .elenco-p .info b{display:block}
 .elenco-p .info span{color:var(--tenue);font-size:14px}
 .passo{display:flex;gap:12px;align-items:flex-start;margin:12px 0}
-.passo .n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--primario);color:#fff;display:grid;place-items:center;font-weight:700}
+.passo .n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--primario);color:#fffdf7;display:grid;place-items:center;font-weight:700}
 
 /* ---------- Il foglio A4 (anteprima e stampa) ---------- */
 #cartaBox{margin:0 auto}
 #carta{transform-origin:top left}
-.foglio{--acc:#2b4a6f;width:210mm;min-height:297mm;background:#fff;color:#1c222b;padding:14mm;box-shadow:0 2px 14px rgba(0,0,0,.25);
+.foglio{--acc:#2f6b4f;width:210mm;min-height:297mm;background:#fff;color:#1f2a24;padding:14mm;box-shadow:0 2px 14px rgba(0,0,0,.25);
   font-size:10pt;line-height:1.4}
 .foglio .testata{display:flex;justify-content:space-between;gap:16px;border-bottom:3px solid var(--acc);padding-bottom:10px;margin-bottom:14px}
 .foglio .ditta{display:flex;gap:12px;align-items:flex-start}
@@ -113,7 +117,7 @@ dialog::backdrop{background:rgba(20,25,33,.55)}
 .foglio thead{display:table-header-group}
 .foglio th{background:var(--acc);color:#fff;font-size:8pt;text-transform:uppercase;letter-spacing:.05em;padding:6px;text-align:left;
   -webkit-print-color-adjust:exact;print-color-adjust:exact}
-.foglio td{padding:6px;border-bottom:1px solid #e3e6eb;vertical-align:top}
+.foglio td{padding:6px;border-bottom:1px solid #e6e1d2;vertical-align:top}
 .foglio tr{break-inside:avoid}
 .foglio .d{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .foglio .c{text-align:center;white-space:nowrap}
@@ -155,7 +159,7 @@ dialog::backdrop{background:rgba(20,25,33,.55)}
 
 <!-- ============================ 2. PAGINA ============================ -->
 <header class="barra">
-  <span class="titolo">Preventivi Edili</span>
+  <span class="titolo"><svg class="logo" aria-hidden="true" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#f6f1e4"/><g transform="rotate(-30 32 32)" fill="#2f6b4f"><rect x="19" y="14" width="8" height="36" rx="2"/><rect x="19" y="14" width="26" height="8" rx="2"/><rect x="19" y="28" width="20" height="8" rx="2"/><rect x="19" y="42" width="26" height="8" rx="2"/></g></svg><span>Edox</span><small class="nascondi-stretto">Preventivi</small></span>
   <span class="salvato nascondi-stretto" id="statoSalvataggio" aria-live="polite"></span>
   <span class="vista-tab">
     <button class="btn" id="tabModifica" type="button">Modifica</button>
@@ -301,6 +305,8 @@ dialog::backdrop{background:rgba(20,25,33,.55)}
   function nuovoId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function testo(v, def) { return typeof v === 'string' ? v : (def || ''); }
 
+  var COLORE_BASE = '#2f6b4f';                 // verde del logo Edox: colore predefinito del preventivo
+  var COLORE_VECCHIO = '#2b4a6f';              // blu delle prime versioni: se è ancora quello, passa al verde
   var CHIAVE = 'preventivi-edili-v1';            // nome sotto cui il browser conserva i dati
   var UNITA = ['a corpo', 'mq', 'ml', 'mc', 'ore', 'giorni', 'pz', 'kg'];
   var ALIQUOTE = ['22', '10', '4', 'esente'];
@@ -315,7 +321,7 @@ dialog::backdrop{background:rgba(20,25,33,.55)}
   function impostazioniBase() {
     return {
       ditta: { nome: '', piva: '', indirizzo: '', telefono: '', email: '', iban: '', logo: '' },
-      colore: '#2b4a6f',
+      colore: COLORE_BASE,
       validitaGiorni: '30',
       condizioni: CONDIZIONI_BASE,
     };
@@ -382,7 +388,7 @@ dialog::backdrop{background:rgba(20,25,33,.55)}
       impostazioni: {
         ditta: { nome: testo(d.nome), piva: testo(d.piva), indirizzo: testo(d.indirizzo), telefono: testo(d.telefono),
                  email: testo(d.email), iban: testo(d.iban), logo: logo.indexOf('data:image/') === 0 ? logo : '' },
-        colore: /^#[0-9a-f]{6}$/i.test(testo(imp.colore)) ? imp.colore : base.colore,
+        colore: /^#[0-9a-f]{6}$/i.test(testo(imp.colore)) && imp.colore.toLowerCase() !== COLORE_VECCHIO ? imp.colore : base.colore,
         validitaGiorni: String(imp.validitaGiorni == null ? base.validitaGiorni : imp.validitaGiorni),
         condizioni: typeof imp.condizioni === 'string' ? imp.condizioni : base.condizioni,
       },
