@@ -8,7 +8,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Nessun codice fiscale o IBAN nel repository
         run: bash scripts/controlla-dati-sensibili.sh --tutti
       - uses: actions/setup-node@v4
