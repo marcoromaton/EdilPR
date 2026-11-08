@@ -14,6 +14,7 @@ Formato:
 ### Marco
 - 13:11 — **Tolto il piè di pagina del browser dalla stampa/PDF** (indirizzo del file, data, titolo, visibili aprendo da Finder). In `src/preventivi/index.html`: `@page` con margine 0 e distanza dai bordi data dal padding del foglio (`box-decoration-break: clone`, così si ripete su ogni pagina). Provato con un PDF di 40 righe (3 pagine) generato da Chrome senza interfaccia: nel testo del PDF non compaiono indirizzo né titolo, margini e intestazione tabella presenti anche a pagina 2. Non provato: la stampa dalla finestra normale di Chrome e altri browser (Safari/Firefox).
 - 13:11 — **Provata l'apertura con doppio clic (`file://`)**: i dati si salvano e restano dopo aver chiuso e riaperto la scheda in Chrome (verificato da Marco).
+- 13:13 — **Pubblicazione con link (GitHub Pages).** Aggiunto `.github/workflows/pubblica.yml`: a ogni push su `main` pubblica solo `src/preventivi`. Repository pubblico `marcoromaton/EdilPR` (scelta di Marco: il codice è visibile, i dati dei preventivi restano nel browser di chi usa l'app).
 
 ## 06/11/2026
 ### Marco
