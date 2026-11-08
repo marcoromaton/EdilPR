@@ -7,5 +7,5 @@ Formato [Keep a Changelog](https://keepachangelog.com/it/). Il dettaglio session
 
 ### Aggiunto
 - App preventivi (`src/preventivi/`): modulo, anteprima A4 live, stampa/PDF, salvataggio nel browser, copia e recupero dei dati.
-- Calcoli con test (`node --test tests/`).
+- Calcoli con test (`node --test`).
 - Struttura standard di `romaton-srl` (ADR 0001).

@@ -1,4 +1,4 @@
-// Test dei calcoli del preventivo. Si lanciano con:  node --test tests/
+// Test dei calcoli del preventivo. Si lanciano con:  node --test
 // Ogni test dice in italiano cosa si aspetta; i numeri sono calcolati a mano e scritti in chiaro.
 const test = require('node:test');
 const assert = require('node:assert/strict');

@@ -22,7 +22,7 @@ nessun server, nessuna connessione internet. Guida per l'utente: [docs/uso-per-p
 ## Test
 
 ```
-node --test tests/
+node --test
 ```
 
 ## Dati

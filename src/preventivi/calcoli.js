@@ -2,7 +2,7 @@
  * calcoli.js — tutti i calcoli del preventivo (totali, IVA, sconti, formato euro e date).
  *
  * Perché esiste come file a parte: sono le funzioni dove un errore costa soldi, quindi hanno dei
- * test automatici (tests/calcoli.test.js, si lanciano con: node --test tests/).
+ * test automatici (tests/calcoli.test.js, si lanciano con: node --test).
  * Non tocca la pagina web: riceve numeri/testi, restituisce numeri/testi.
  *
  * REGOLA CHIAVE: i soldi sono sempre CENTESIMI INTERI (12,50 EUR = 1250).
